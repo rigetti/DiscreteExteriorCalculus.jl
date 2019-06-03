@@ -1,0 +1,6 @@
+include("test_utils.jl")
+include("test_geometry.jl")
+include("test_cell_complex.jl")
+include("test_mesh.jl")
+include("test_operators.jl")
+include("test_triangulation.jl")
