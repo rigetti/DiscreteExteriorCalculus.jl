@@ -5,18 +5,19 @@ using Combinatorics: combinations
 
 export Point, Simplex, Metric, Wedge, Barycentric
 
-# References:
-# [1] http://forumgeom.fau.edu/FG2011volume11/FG201121.pdf
-# [2] https://arxiv.org/pdf/1204.0747.pdf
-
 ################################################################################
 # Point and Simplex
 ################################################################################
 
-# Points are used to refer to elements of ℝᴺ. Simplices are used to
-# perform calculations on simplices and to construct meshes.
+export Point
+"""
+    Point{N}(coords::SVector{N, Float64}) where N
+    Point(coords::AbstractVector{<:Real})
+    Point(coords::Vararg{<:Real})
 
-struct Point{N} # element of ℝᴺ
+Create a point in `N` dimensional space.
+"""
+struct Point{N}
     coords::SVector{N, Float64}
 end
 
@@ -27,8 +28,16 @@ end
 
 Point(coords::Vararg{<:Real}) = Point(collect(coords))
 
-# TODO is SVector slowing things down?
-struct Simplex{N, K} # (K-1) simplex in ℝᴺ
+export Simplex
+"""
+    Simplex{N, K}(points::SVector{K, Point{N}}) where {N, K}
+    Simplex(points::AbstractVector{Point{N}}) where N
+    Simplex(points::Vararg{Point{N}}) where N
+    Simplex(c::Cell)
+
+Create a simplex of dimension `K-1` embedded in `N` dimensional space.
+"""
+struct Simplex{N, K}
     points::SVector{K, Point{N}}
     function Simplex{N, K}(points::SVector{K, Point{N}}) where {N, K}
         @assert 1 <= K <= N+1
@@ -41,9 +50,8 @@ function Simplex(points::AbstractVector{Point{N}}) where N
     return Simplex{N, K}(SVector{K, Point{N}}(points))
 end
 
-Simplex(points::Vararg{Point}) = Simplex(collect(points))
+Simplex(points::Vararg{Point{N}}) where N = Simplex(collect(points))
 
-# compute all subsimplices of a given dimension
 function subsimplices(s::Simplex{N, K}, k::Int) where {N, K}
     @assert k >= 0
     if (k == 0) || (k > K)
@@ -58,8 +66,18 @@ end
 ################################################################################
 
 SquareSMatrix{N} = SMatrix{N, N, Float64}
-# A symmetric but not necessarily positive metric
-struct Metric{N, T<:SquareSMatrix{N}} # written this way so mat is concretely typed
+
+export Metric
+"""
+    Metric{N, T<:SMatrix{N, N, Float64}}(mat::Symmetric{Float64, T})
+    Metric(mat::T) where {N, T<:SMatrix{N, N, Float64}}
+    Metric(mat::AbstractMatrix{<:Real})
+    Metric(N::Int)
+
+Create a symmetric but not necessarily positive semi-definite metric. The
+last method creates the Euclidean metric.
+"""
+struct Metric{N, T<:SquareSMatrix{N}}
     mat::Symmetric{Float64, T}
 end
 
@@ -71,15 +89,22 @@ function Metric(mat::AbstractMatrix{<:Real})
     return Metric(SquareSMatrix{N}(mat))
 end
 
-# Euclidean metric
 Metric(N::Int) = Metric(SMatrix{N,N}(1.0I))
 
 inner_product(m::Metric{N}, v1::SVector{N, Float64}, v2::SVector{N, Float64}) where N = transpose(v1) * m.mat * v2
 norm_square(m::Metric{N}, v::SVector{N, Float64}) where N = inner_product(m, v, v)
 norm(m::Metric{N}, v::SVector{N, Float64}) where N = sqrt(abs(norm_square(m, v)))
 
-# TODO is SVector slowing things down?
-# wedge product of K vectors in ℝᴺ
+export Wedge
+"""
+    Wedge{N, K}(vectors::SVector{K, SVector{N, Float64}})
+    Wedge(vectors::Vector{SVector{N, Float64}}) where N
+    Wedge(s::Simplex{N, K}) where {N, K}
+
+Create the wedge product of `K` vectors in `N` dimensional space. The last
+method creates the wedge product of all vectors emanating from the first
+vertex of a simplex.
+"""
 struct Wedge{N, K}
     vectors::SVector{K, SVector{N, Float64}}
 end
@@ -89,7 +114,6 @@ function Wedge(vectors::Vector{SVector{N, Float64}}) where N
     Wedge{N, K}(SVector{K, SVector{N, Float64}}(vectors))
 end
 
-# wedge product of the edge vectors emanating from the first vertex
 function Wedge(s::Simplex{N, K}) where {N, K}
     vectors = SVector{N, Float64}[p.coords - s.points[1].coords for p in s.points[2:end]]
     return Wedge(vectors)

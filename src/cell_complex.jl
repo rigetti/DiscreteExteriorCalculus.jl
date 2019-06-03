@@ -2,24 +2,23 @@ import Base: push!, append!, show
 using StaticArrays: SVector
 using UniqueVectors: UniqueVector
 using Combinatorics: combinations
-using LinearAlgebra: det
 using SparseArrays: sparse
 using MatrixNetworks: scomponents, bfs
-
-export Cell, CellComplex
 
 ################################################################################
 # Cell
 ################################################################################
 
-# Cells represent polytopes of arbitrary dimension e.g. points, line segments,
-# triangles, tetrahedra. A Cell does not necessarily refer to a simplex.
+export Cell
+"""
+    Cell{N}(children::Vector{Cell{N}}, parents::Dict{Cell{N}, Bool},
+        points::Vector{Point{N}}, K::Int) where N
+    Cell(points::AbstractVector{Point{N}}, K::Int) where N
+    Cell(s::Simplex{N, K}) where {N, K}
 
-# NOTE: Cell has an inner constructor that enforces the heirarchy of dimension.
-# If the parents field is only modified thereafter using parent! the heirarchy
-# will be maintained.
-
-struct Cell{N} # (K-1) dimensional cell in ℝᴺ
+Create a polytope of dimension `K-1` embedded in `N` dimensional space.
+"""
+struct Cell{N}
     children::Vector{Cell{N}} # (K-2) dimensional cells
     parents::Dict{Cell{N}, Bool} # K dimensional cells => relative orientations
     points::Vector{Point{N}} # all vertices of the cell
@@ -36,16 +35,16 @@ struct Cell{N} # (K-1) dimensional cell in ℝᴺ
         return new{N}(children, parents, points, K)
     end
 end
+
+Cell(points::AbstractVector{Point{N}}, K::Int) where N = Cell{N}(Cell{N}[],
+    Dict{Cell{N}, Bool}(), Vector(points), K)
+
+Cell(s::Simplex{N, K}) where {N, K} = Cell(s.points, K)
+
 show(io::IO, c::Cell{N}) where N = print(io,
     "Cell{$N,$(c.K)}(children: $(length(c.children)), " *
     "parents: $(length(c.parents)), points: $(c.points))")
 
-Cell(points::AbstractVector{Point{N}}, K::Int) where N = Cell{N}(Cell{N}[],
-    Dict{Cell{N}, Bool}(), Vector(points), K)
-Cell(s::Simplex{N, K}) where {N, K} = Cell(s.points, K)
-
-# construct a Simplex from a Cell in the case that the cell
-# has the right number of points
 function Simplex(c::Cell)
     @assert length(c.points) == c.K
     return Simplex(c.points)
@@ -62,14 +61,17 @@ end
 # CellComplex
 ################################################################################
 
-# A CellComplex is a collection of cells organized by dimension and ordered
-# within a dimension.
+export CellComplex
+"""
+    CellComplex{N,K}(cells::SVector{K, UniqueVector{Cell{N}}}) where {N, K}
+    CellComplex{N,K}() where {N, K}
+    CellComplex{N,K}(cells::AbstractVector{Cell{N}}) where {N, K}
+    CellComplex(cells::AbstractVector{Cell{N}}) where N
 
-# NOTE: the cells of a CellComplex are graded so that cells c in cells[K]
-# have c.K == K. This is enforced by the inner constructor of CellComplex.
-# If cells are only added to a CellComplex thereafter with the push! and
-# append! methods defined below this property will be maintained.
-
+Create a cell complex with cells of dimension `0` through `K-1` embedded in `N`
+dimensional space. The last method creates a cell complex consisting of all
+descendants of `cells`.
+"""
 struct CellComplex{N, K}
     cells::SVector{K, UniqueVector{Cell{N}}}
     function CellComplex{N,K}(cells::SVector{K, UniqueVector{Cell{N}}}) where {N, K}
@@ -82,14 +84,26 @@ struct CellComplex{N, K}
         return new{N,K}(cells)
     end
 end
-show(io::IO, comp::CellComplex{N,K}) where {N, K} = print(
-     io, "CellComplex{$N,$K}$(tuple(map(length, comp.cells)...))")
 
 CellComplex{N,K}() where {N, K} = CellComplex{N,K}(
     SVector{K}([UniqueVector(Cell{N}[]) for _ in 1:K]))
 
 CellComplex{N,K}(cells::AbstractVector{Cell{N}}) where {N, K} =
     append!(CellComplex{N,K}(), cells)
+
+function CellComplex(cells::AbstractVector{Cell{N}}) where N
+    K = maximum(c.K for c in cells)
+    comp = CellComplex{N, K}(cells)
+    for k in reverse(1:K)
+        for c in comp.cells[k]
+            append!(comp, c.children)
+        end
+    end
+    return comp
+end
+
+show(io::IO, comp::CellComplex{N,K}) where {N, K} = print(
+     io, "CellComplex{$N,$K}$(tuple(map(length, comp.cells)...))")
 
 function push!(comp::CellComplex{N,K}, c::Cell{N}) where {N, K}
     @assert c.K <= K
@@ -112,18 +126,6 @@ function append!(comp1::CellComplex{N, K}, comp2::CellComplex{N, J}) where {N, K
         append!(comp1, cells)
     end
     return comp1
-end
-
-# Create a cell complex with the given cells and all of their descendants
-function CellComplex(cells::AbstractVector{Cell{N}}) where N
-    K = maximum(c.K for c in cells)
-    comp = CellComplex{N, K}(cells)
-    for k in reverse(1:K)
-        for c in comp.cells[k]
-            append!(comp, c.children)
-        end
-    end
-    return comp
 end
 
 # check if a CellComplex is a simplicial complex
