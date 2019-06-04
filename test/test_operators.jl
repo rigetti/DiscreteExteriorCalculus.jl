@@ -12,11 +12,11 @@ using SparseArrays: sparse, spzeros
         points = [Point((basis[1] * i + basis[2] * j)...) for i in 1:n for j in 1:n]
         tcomp = DEC.triangulate(points)
         comp = tcomp.complex
-        @test DEC.simplicial(comp)
-        @test DEC.one_sided(m, comp)
-        @test DEC.pairwise_delaunay(m, comp)
-        @test DEC.well_centered(m, comp)
-        mesh = Mesh(tcomp, DEC.circumcenter(m))
+        @test simplicial(comp)
+        @test one_sided(m, comp)
+        @test pairwise_delaunay(m, comp)
+        @test well_centered(m, comp)
+        mesh = Mesh(tcomp, circumcenter(m))
     end
     # test hodge star
     begin
@@ -70,19 +70,19 @@ using SparseArrays: sparse, spzeros
     end
     # test differential_operator
     begin
-        @test DEC.differential_operator_sequence(m, mesh, "★d★d", 1, true) ==
+        @test differential_operator_sequence(m, mesh, "★d★d", 1, true) ==
             [dual_★s[3], dual_ds[2],★s[2],ds[1]]
-        @test DEC.differential_operator(m, mesh, "★d★d", 1, true) ==
+        @test differential_operator(m, mesh, "★d★d", 1, true) ==
             dual_★s[3] * dual_ds[2] * ★s[2] * ds[1]
         v = ones(length(mesh.primal.complex.cells[1]))
-        @test norm(DEC.differential_operator(m, mesh, "★d★d", 1, true, v) -
+        @test norm(differential_operator(m, mesh, "★d★d", 1, true, v) -
             dual_★s[3] * dual_ds[2] * ★s[2] * ds[1] * v) < 1e-14
         for primal in [true, false]
             for k in 1:2
-                @test count(!iszero, DEC.differential_operator(m, mesh, "dd", k, primal)) == 0 # d² = 0
+                @test count(!iszero, differential_operator(m, mesh, "dd", k, primal)) == 0 # d² = 0
             end
             for (k, s) in zip(1:3, [1,-1,1])
-                @test count(!iszero, DEC.differential_operator(m, mesh, "★★", k, primal) - I*s) == 0 # ★★ ∝ I
+                @test count(!iszero, differential_operator(m, mesh, "★★", k, primal) - I*s) == 0 # ★★ ∝ I
             end
         end
     end

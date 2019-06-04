@@ -4,7 +4,7 @@ const DEC = DiscreteExteriorCalculus
 @testset "Mesh obtuse triangle" begin
     m = Metric(2)
     s = Simplex(Point(0,0), Point(2,0), Point(1,.5))
-    for center in [DEC.centroid, DEC.circumcenter(m)]
+    for center in [centroid, circumcenter(m)]
         primal = TriangulatedComplex([s])
         mesh = Mesh(primal, center)
         @test map(length, mesh.primal.complex.cells) ==
@@ -33,14 +33,14 @@ end
     b, _ = DEC.circumsphere_barycentric(m, acute)
     @test !any(b.coords .< 0) # acute
     tcomp = TriangulatedComplex([acute, obtuse])
-    center = DEC.circumcenter(m)
+    center = circumcenter(m)
     mesh = Mesh(tcomp, center)
     # check that the length of the edge between the cells is correct
-    edge = DEC.subcomplex(mesh.primal.complex, [Simplex(points[1:2])]).cells[2][1]
+    edge = subcomplex(mesh.primal.complex, [Simplex(points[1:2])]).cells[2][1]
     dual_edge = DEC.dual(mesh, edge)
     ccs = [Point(center(x)) for x in [Simplex(edge), obtuse, acute]]
-    d1 = DEC.norm(m, ccs[1].coords - ccs[2].coords)
-    d2 = DEC.norm(m, ccs[1].coords - ccs[3].coords)
+    d1 = norm(m, ccs[1].coords - ccs[2].coords)
+    d2 = norm(m, ccs[1].coords - ccs[3].coords)
     @test abs(DEC.volume(m, mesh.dual, DEC.dual(mesh, edge))) == abs(d1 - d2)
     # check that the choice of sign was correct
     simplices, bools = zip(mesh.dual.simplices[dual_edge]...)
@@ -55,7 +55,7 @@ end
     points = [Point((basis[1] * i + basis[2] * j)...) for i in 1:n for j in 1:n]
     tcomp = DEC.triangulate(points)
     m = Metric(2)
-    mesh = Mesh(tcomp, DEC.centroid)
+    mesh = Mesh(tcomp, centroid)
     for c in mesh.primal.complex.cells[1]
         @test DEC.volume(m, mesh.primal, c) == 1
     end

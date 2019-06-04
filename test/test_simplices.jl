@@ -97,7 +97,7 @@ end
         # using Euclidean metric
         delaunay = norm(center.coords - proj_p.coords)^2 - norm(center.coords - s1.points[1].coords)^2
         s2 = Simplex(s1.points[2:end]..., p)
-        @test DEC.pairwise_delaunay(m, s1, s2) ≈ delaunay
+        @test pairwise_delaunay(m, s1, s2) ≈ delaunay
     end
 end
 

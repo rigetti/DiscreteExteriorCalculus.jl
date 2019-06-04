@@ -50,12 +50,12 @@ end
     s1, s2, s3 = Simplex(points[1:3]), Simplex(points[2:4]), Simplex(points[5:7])
     comp = CellComplex([s1, s2, s3])
     @test Set(map(Simplex, comp.cells[end])) == Set([s1, s2, s3])
-    DEC.orient!(comp)
+    orient!(comp)
     s2_positive = Simplex(points[3], points[2], points[4])
     s3_positive = Simplex(points[6], points[5], points[7])
     @test Set(map(Simplex, comp.cells[end])) == Set([s1, s2_positive, s3_positive])
     # boundaries
-    interior, exterior = DEC.boundary_components(comp)
+    interior, exterior = boundary_components(comp)
     @test isempty(interior)
     @test length(exterior) == 2
     @test Set([length(e.cells[end]) for e in exterior]) == Set([3,4])
@@ -67,7 +67,7 @@ end
     end
     # boundary not positively oriented
     @test !(all(relative_orientations))
-    DEC.orient!(exterior_union)
+    orient!(exterior_union)
     # now boundary is positively oriented
     for c in exterior_union
         @test length(c.parents) == 1
