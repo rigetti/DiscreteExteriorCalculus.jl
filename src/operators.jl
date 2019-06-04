@@ -1,9 +1,5 @@
 using SparseArrays: spdiagm, sparse, spzeros, SparseMatrixCSC
-using LinearAlgebra: diag, nullspace
-
-# We represent a k-form in terms of its integral on each k-simplex.
-# As a result, the exterior derivative does not depend on the metric
-# though the hodge dual does.
+using LinearAlgebra: diag
 
 # discrete circumcentric hodge star on (k-1)-forms
 function circumcenter_hodge(m::Metric{N}, mesh::Mesh{N, K}, k::Int,

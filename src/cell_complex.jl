@@ -9,33 +9,6 @@ using MatrixNetworks: scomponents, bfs
 # Cell
 ################################################################################
 
-export Cell
-"""
-    Cell{N}(children::Vector{Cell{N}}, parents::Dict{Cell{N}, Bool},
-        points::Vector{Point{N}}, K::Int) where N
-    Cell(points::AbstractVector{Point{N}}, K::Int) where N
-    Cell(s::Simplex{N, K}) where {N, K}
-
-Create a polytope of dimension `K-1` embedded in `N` dimensional space.
-"""
-struct Cell{N}
-    children::Vector{Cell{N}} # (K-2) dimensional cells
-    parents::Dict{Cell{N}, Bool} # K dimensional cells => relative orientations
-    points::Vector{Point{N}} # all vertices of the cell
-    K::Int # dimension + 1
-    function Cell{N}(children::Vector{Cell{N}}, parents::Dict{Cell{N}, Bool},
-                     points::Vector{Point{N}}, K::Int) where N
-        @assert 1 <= K <= N+1
-        for c in children
-            @assert c.K == K-1
-        end
-        for c in keys(parents)
-            @assert c.K == K+1
-        end
-        return new{N}(children, parents, points, K)
-    end
-end
-
 Cell(points::AbstractVector{Point{N}}, K::Int) where N = Cell{N}(Cell{N}[],
     Dict{Cell{N}, Bool}(), Vector(points), K)
 
@@ -44,11 +17,6 @@ Cell(s::Simplex{N, K}) where {N, K} = Cell(s.points, K)
 show(io::IO, c::Cell{N}) where N = print(io,
     "Cell{$N,$(c.K)}(children: $(length(c.children)), " *
     "parents: $(length(c.parents)), points: $(c.points))")
-
-function Simplex(c::Cell)
-    @assert length(c.points) == c.K
-    return Simplex(c.points)
-end
 
 function parent!(c::Cell{N}, p::Cell{N}, o::Bool) where N
     @assert p.K == c.K+1
@@ -61,35 +29,14 @@ end
 # CellComplex
 ################################################################################
 
-export CellComplex
-"""
-    CellComplex{N,K}(cells::SVector{K, UniqueVector{Cell{N}}}) where {N, K}
-    CellComplex{N,K}() where {N, K}
-    CellComplex{N,K}(cells::AbstractVector{Cell{N}}) where {N, K}
-    CellComplex(cells::AbstractVector{Cell{N}}) where N
-
-Create a cell complex with cells of dimension `0` through `K-1` embedded in `N`
-dimensional space. The last method creates a cell complex consisting of all
-descendants of `cells`.
-"""
-struct CellComplex{N, K}
-    cells::SVector{K, UniqueVector{Cell{N}}}
-    function CellComplex{N,K}(cells::SVector{K, UniqueVector{Cell{N}}}) where {N, K}
-        @assert 1 <= K <= N+1
-        for k in 1:K
-            for c in cells[k]
-                @assert c.K == k
-            end
-        end
-        return new{N,K}(cells)
-    end
-end
-
 CellComplex{N,K}() where {N, K} = CellComplex{N,K}(
     SVector{K}([UniqueVector(Cell{N}[]) for _ in 1:K]))
 
 CellComplex{N,K}(cells::AbstractVector{Cell{N}}) where {N, K} =
     append!(CellComplex{N,K}(), cells)
+
+CellComplex(simplices::AbstractVector{Simplex{N, K}}) where {N, K} =
+    TriangulatedComplex(simplices).complex
 
 function CellComplex(cells::AbstractVector{Cell{N}}) where N
     K = maximum(c.K for c in cells)

@@ -1,21 +1,8 @@
 import Base: show
 
-export TriangulatedComplex, Mesh
-
 ################################################################################
 # TriangulatedComplex
 ################################################################################
-
-# A CellComplex along with a decomposition of each cell into simplices.
-# Each simplex comes with a boolean indicating if it should be considered to
-# have positive or negative volume.
-SignedSimplex{N} = Tuple{Vector{Point{N}}, Bool}
-struct TriangulatedComplex{N, K}
-    complex::CellComplex{N, K}
-    simplices::Dict{Cell{N}, Vector{SignedSimplex{N}}}
-end
-show(io::IO, tcomp::TriangulatedComplex{N,K}) where {N, K} = print(
-     io, "TriangulatedComplex{$N,$K}$(tuple(map(length, tcomp.complex.cells)...))")
 
 TriangulatedComplex{N,K}() where {N, K} = TriangulatedComplex{N,K}(
     CellComplex{N,K}(), Dict{Cell{N}, Vector{SignedSimplex{N}}}())
@@ -48,8 +35,8 @@ function TriangulatedComplex(simplices::AbstractVector{Simplex{N, K}}) where {N,
     return TriangulatedComplex{N,K}(complex, simplex_mapping)
 end
 
-CellComplex(simplices::AbstractVector{Simplex{N, K}}) where {N, K} =
-    TriangulatedComplex(simplices).complex
+show(io::IO, tcomp::TriangulatedComplex{N,K}) where {N, K} = print(
+     io, "TriangulatedComplex{$N,$K}$(tuple(map(length, tcomp.complex.cells)...))")
 
 # if i is even keep the orientation given by the sign_of_permutation, otherwise
 # switch it. see [3] page 12.
@@ -119,16 +106,10 @@ end
 # Mesh
 ################################################################################
 
-# A mesh refers to both the primal and dual meshes.
-
-struct Mesh{N,K}
-    primal::TriangulatedComplex{N,K}
-    dual::TriangulatedComplex{N,K}
-end
-show(io::IO, m::Mesh{N,K}) where {N, K} = print(io, "Mesh{$N,$K}($(m.primal), $(m.dual))")
-
 Mesh(tcomp::TriangulatedComplex{N}, center::Function) where N =
     Mesh(tcomp, dual(tcomp.complex, center))
+
+show(io::IO, m::Mesh{N,K}) where {N, K} = print(io, "Mesh{$N,$K}($(m.primal), $(m.dual))")
 
 # get the dual of a cell
 function dual(mesh::Mesh{N, K}, c::Cell{N}) where {N, K}

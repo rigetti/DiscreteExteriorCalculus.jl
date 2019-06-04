@@ -3,23 +3,9 @@ using LinearAlgebra: I, Symmetric, det
 import LinearAlgebra: norm
 using Combinatorics: combinations
 
-export Point, Simplex, Metric, Wedge, Barycentric
-
 ################################################################################
-# Point and Simplex
+# Point
 ################################################################################
-
-export Point
-"""
-    Point{N}(coords::SVector{N, Float64}) where N
-    Point(coords::AbstractVector{<:Real})
-    Point(coords::Vararg{<:Real})
-
-Create a point in `N` dimensional space.
-"""
-struct Point{N}
-    coords::SVector{N, Float64}
-end
 
 function Point(coords::AbstractVector{<:Real})
     N = length(coords)
@@ -28,22 +14,11 @@ end
 
 Point(coords::Vararg{<:Real}) = Point(collect(coords))
 
-export Simplex
-"""
-    Simplex{N, K}(points::SVector{K, Point{N}}) where {N, K}
-    Simplex(points::AbstractVector{Point{N}}) where N
-    Simplex(points::Vararg{Point{N}}) where N
-    Simplex(c::Cell)
+Point(b::Barycentric) = Point(barycentric_matrix(b.simplex) * b.coords)
 
-Create a simplex of dimension `K-1` embedded in `N` dimensional space.
-"""
-struct Simplex{N, K}
-    points::SVector{K, Point{N}}
-    function Simplex{N, K}(points::SVector{K, Point{N}}) where {N, K}
-        @assert 1 <= K <= N+1
-        return new{N, K}(points)
-    end
-end
+################################################################################
+# Simplex
+################################################################################
 
 function Simplex(points::AbstractVector{Point{N}}) where N
     K = length(points)
@@ -51,6 +26,11 @@ function Simplex(points::AbstractVector{Point{N}}) where N
 end
 
 Simplex(points::Vararg{Point{N}}) where N = Simplex(collect(points))
+
+function Simplex(c::Cell)
+    @assert length(c.points) == c.K
+    return Simplex(c.points)
+end
 
 function subsimplices(s::Simplex{N, K}, k::Int) where {N, K}
     @assert k >= 0
@@ -65,22 +45,6 @@ end
 # Metric
 ################################################################################
 
-SquareSMatrix{N} = SMatrix{N, N, Float64}
-
-export Metric
-"""
-    Metric{N, T<:SMatrix{N, N, Float64}}(mat::Symmetric{Float64, T})
-    Metric(mat::T) where {N, T<:SMatrix{N, N, Float64}}
-    Metric(mat::AbstractMatrix{<:Real})
-    Metric(N::Int)
-
-Create a symmetric but not necessarily positive semi-definite metric. The
-last method creates the Euclidean metric.
-"""
-struct Metric{N, T<:SquareSMatrix{N}}
-    mat::Symmetric{Float64, T}
-end
-
 Metric(mat::T) where {N, T<:SquareSMatrix{N}} = Metric{N, T}(Symmetric(mat))
 
 function Metric(mat::AbstractMatrix{<:Real})
@@ -92,22 +56,14 @@ end
 Metric(N::Int) = Metric(SMatrix{N,N}(1.0I))
 
 inner_product(m::Metric{N}, v1::SVector{N, Float64}, v2::SVector{N, Float64}) where N = transpose(v1) * m.mat * v2
+
 norm_square(m::Metric{N}, v::SVector{N, Float64}) where N = inner_product(m, v, v)
+
 norm(m::Metric{N}, v::SVector{N, Float64}) where N = sqrt(abs(norm_square(m, v)))
 
-export Wedge
-"""
-    Wedge{N, K}(vectors::SVector{K, SVector{N, Float64}})
-    Wedge(vectors::Vector{SVector{N, Float64}}) where N
-    Wedge(s::Simplex{N, K}) where {N, K}
-
-Create the wedge product of `K` vectors in `N` dimensional space. The last
-method creates the wedge product of all vectors emanating from the first
-vertex of a simplex.
-"""
-struct Wedge{N, K}
-    vectors::SVector{K, SVector{N, Float64}}
-end
+################################################################################
+# Wedge
+################################################################################
 
 function Wedge(vectors::Vector{SVector{N, Float64}}) where N
     K = length(vectors)
@@ -129,35 +85,16 @@ function inner_product(m::Metric{N}, w1::Wedge{N, K}, w2::Wedge{N, K}) where {N,
         return det(inner_products)
     end
 end
+
 norm_square(m::Metric{N}, w::Wedge{N}) where N = inner_product(m, w, w)
 
-# the squared volume of a simplex can be found from the wedge product of its edge vectors.
 volume_square(m::Metric{N}, s::Simplex{N, K}) where {N, K} = norm_square(m, Wedge(s))/factorial(K-1)^2
+
 volume(m::Metric{N}, s::Simplex{N, K}) where {N, K} = sqrt(abs(norm_square(m, Wedge(s))))/factorial(K-1)
 
 ################################################################################
-# Barycentrics
+# Barycentric
 ################################################################################
-
-# Barycentric represents a simplex and a point in its affine subspace.
-# The barycentric coordinates are a vector x with sum(x) == 1 such that
-# the point can be written ∑ᵢ xᵢ Aᵢ where Aᵢ are the vertices of the simplex.
-# Any point in the affine subspace of the simplex has
-# unique barycentric coordinates.
-
-# TODO write some notes explaining these barycentric calculations
-
-struct Barycentric{N, K}
-    simplex::Simplex{N, K}
-    coords::SVector{K, Float64}
-    function Barycentric{N, K}(s::Simplex{N, K}, coords::SVector{K, Float64}) where {N, K}
-        @assert sum(coords) ≈ 1
-        if sum(coords) != 1
-            coords = SVector{K, Float64}([coords[1:end-1]..., 1 - sum(coords[1:end-1])])
-        end
-        return new{N, K}(s, coords)
-    end
-end
 
 function Barycentric(s::Simplex{N, K}, coords::AbstractVector{<:Real}) where {N, K}
     @assert length(coords) == K
@@ -166,14 +103,12 @@ end
 
 Barycentric(s::Simplex, coords::Vararg{<:Real}) = Barycentric(s, collect(coords))
 
-# barycentric coordinates of the projection of p onto the affine subspace of s
 function Barycentric(m::Metric{N}, s::Simplex{N}, p::Point{N}) where N
     A, B = barycentric_projection_matrices(m, s)
     coords = A * p.coords + B
     return Barycentric(s, coords)
 end
 
-Point(b::Barycentric) = Point(barycentric_matrix(b.simplex) * b.coords)
 barycentric_matrix(s::Simplex) = hcat([p.coords for p in s.points]...)
 
 # Extremize norm_square(m, p - b * x) over x constrained by sum(x) == 1 where
@@ -195,6 +130,7 @@ end
 # can be written in the form xᵀAx + Bᵀx where B depends on p but A does not.
 # See Theorem 2 in [1].
 distance_quadratic(m::Metric{N}, s::Simplex{N}) where N = -.5 * circumsphere_matrix(m, s)
+
 distance_linear(m::Metric{N}, s::Simplex{N}, p::Point{N}) where N = [norm_square(
     m, p.coords - q.coords) for q in s.points]
 
@@ -279,4 +215,5 @@ end
 
 # functions for computing simplex centers
 circumcenter(m::Metric{N}) where N = s::Simplex{N} -> circumsphere_barycentric(m, s)[1]
+
 centroid(s::Simplex{N, K}) where {N, K} = Barycentric(s, SVector{K, Float64}(ones(K)/K))

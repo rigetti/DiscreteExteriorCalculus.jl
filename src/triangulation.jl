@@ -1,4 +1,4 @@
-import VoronoiDelaunay; const vd = VoronoiDelaunay # there are name overlaps
+import VoronoiDelaunay; const vd = VoronoiDelaunay
 using LinearAlgebra: norm
 
 # This file uses VoronoiDelaunay.jl to create 2 dimensional Delaunay
