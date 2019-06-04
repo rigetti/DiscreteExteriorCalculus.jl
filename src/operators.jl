@@ -27,6 +27,7 @@ function circumcenter_hodge(m::Metric{N}, mesh::Mesh{N, K}, k::Int,
 end
 
 # ★★ = sign(det(metric)) * (-1)^(k(K-k)) * I for k forms in K dimensions
+export hodge_square_sign
 function hodge_square_sign(m::Metric, K::Int, k::Int)
     return sign(det(collect(m.mat))) * (mod((k-1) * (K-k), 2) == 0 ? 1 : -1)
 end
@@ -54,6 +55,7 @@ end
 # expr must be a string consisting of the characters 'd' and '★' (note ★ is
 # \bigstar). k-1 indicates the dimension of the form the operator will act on
 # while primal indicates whether the form is a primal or dual form
+export differential_operator_sequence
 function differential_operator_sequence(m::Metric{N}, mesh::Mesh{N, K},
     expr::String, k::Int, primal::Bool) where {N, K}
     ops = SparseMatrixCSC{Float64,Int64}[]
@@ -77,6 +79,7 @@ function differential_operator_sequence(m::Metric{N}, mesh::Mesh{N, K},
     return reverse(ops)
 end
 
+export differential_operator
 function differential_operator(m::Metric{N}, mesh::Mesh{N}, expr::String,
     k::Int, primal::Bool) where N
     ops = differential_operator_sequence(m, mesh, expr, k, primal)
@@ -104,6 +107,7 @@ function laplacian(m::Metric{N}, mesh::Mesh{N, K}, k::Int,
 end
 
 # Approximate a vector field from a 1-form using least squares
+export sharp
 function sharp(m::Metric{N}, comp::CellComplex{N}, form::AbstractVector{<:Real}) where N
     field = Vector{Float64}[]
     for c in comp.cells[1]

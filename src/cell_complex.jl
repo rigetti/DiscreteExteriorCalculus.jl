@@ -76,6 +76,7 @@ function append!(comp1::CellComplex{N, K}, comp2::CellComplex{N, J}) where {N, K
 end
 
 # check if a CellComplex is a simplicial complex
+export simplicial
 function simplicial(comp::CellComplex{N, K}) where {N, K}
     for k in 1:K
         for cell in comp.cells[k]
@@ -88,6 +89,7 @@ function simplicial(comp::CellComplex{N, K}) where {N, K}
 end
 
 # check if all pairs of cells sharing a face are pairwise delaunay.
+export pairwise_delaunay
 function pairwise_delaunay(m::Metric{N}, comp::CellComplex{N, K},
                            ϵ::Real=0.0) where {N, K}
     for k in 1:K
@@ -106,6 +108,7 @@ end
 
 # check if all pairs of cells sharing a face do not share a circumsphere
 # after being rotated onto the same affine space
+export pairwise_noncocyclic
 function pairwise_noncocyclic(m::Metric{N}, comp::CellComplex{N, K},
     ϵ::Real=0.0) where {N, K}
     for k in 1:K
@@ -124,6 +127,7 @@ end
 
 # check if all boundary cells have their circumcenter on the same side of
 # the boundary as their apex
+export one_sided
 function one_sided(m::Metric{N}, comp::CellComplex{N, K},
     ϵ::Real=0.0) where {N, K}
     for k in 1:K
@@ -143,6 +147,7 @@ function one_sided(m::Metric{N}, comp::CellComplex{N, K},
 end
 
 # check if all simplices in a simplicial complex contain their circumcenters
+export well_centered
 function well_centered(m::Metric{N}, comp::CellComplex{N, K},
     ϵ::Real=0.0) where {N, K}
     for k in 1:K
@@ -187,6 +192,7 @@ function adjacency(cells::AbstractVector{Cell{N}}) where N
     return sparse(row_inds, col_inds, vals, length(cells), length(cells)), faces
 end
 
+export connected_components
 function connected_components(cells::AbstractVector{Cell{N}}) where N
     adj, _ = adjacency(cells)
     cc = scomponents(adj)
@@ -199,6 +205,7 @@ end
 
 connected_components(comp::CellComplex) = connected_components(comp.cells[end])
 
+export boundary
 function boundary(cells::AbstractVector{Cell{N}}) where N
     children = unique(vcat([c.children for c in cells]...))
     return filter(c -> length(c.parents) < 2, children)
@@ -208,6 +215,7 @@ boundary(comp::CellComplex) = CellComplex(boundary(comp.cells[end]))
 
 # find the interior boundaries and the exterior boundary assuming that the cells
 # form a connected manifold
+export boundary_components_connected
 function boundary_components_connected(cells::AbstractVector{Cell{N}}) where N
     boundary_comps = connected_components(boundary(cells))
     # identify the exterior boundary by finding which component contains
@@ -226,6 +234,7 @@ end
 
 # find the interior boundaries and the exterior boundary without assuming that
 # the cells form a connected manifold
+export boundary_components
 function boundary_components(cells::AbstractVector{Cell{N}}) where N
     interior_boundaries, exterior_boundaries = Vector{Cell{N}}[], Vector{Cell{N}}[]
     for component in connected_components(cells)
@@ -268,6 +277,7 @@ end
 # For an orientable manifold, all cells of dimension N will become positively
 # oriented, and all boundary cells of dimension N-1 will become oriented
 # consistently with their parent.
+export orient!
 function orient!(cells::AbstractVector{Cell{N}}) where N
     adj, faces = adjacency(cells)
     cc = scomponents(adj)
@@ -322,8 +332,9 @@ function orient!(comp::CellComplex{N, K}) where {N, K}
     return comp
 end
 
-# find the submanifold that includes the given simplices
-function submanifold(comp::CellComplex{N}, simplices::AbstractVector{Simplex{N, K}}) where {N, K}
+# find the subcomplex that includes the given simplices
+export subcomplex
+function subcomplex(comp::CellComplex{N}, simplices::AbstractVector{Simplex{N, K}}) where {N, K}
     simplex_sets = [Set(s.points) for s in simplices]
     return CellComplex(filter(c -> Set(c.points) in simplex_sets, comp.cells[K]))
 end

@@ -163,6 +163,8 @@ function pairwise_delaunay(m::Metric{N}, s1::Simplex{N, K}, s2::Simplex{N, K}) w
 end
 
 # functions for computing simplex centers
+export circumcenter
 circumcenter(m::Metric{N}) where N = s::Simplex{N} -> circumsphere_barycentric(m, s)[1]
 
+export centroid
 centroid(s::Simplex{N, K}) where {N, K} = Barycentric(s, SVector{K, Float64}(ones(K)/K))

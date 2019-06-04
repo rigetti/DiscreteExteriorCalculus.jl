@@ -36,7 +36,7 @@ end
     center = DEC.circumcenter(m)
     mesh = Mesh(tcomp, center)
     # check that the length of the edge between the cells is correct
-    edge = DEC.submanifold(mesh.primal.complex, [Simplex(points[1:2])]).cells[2][1]
+    edge = DEC.subcomplex(mesh.primal.complex, [Simplex(points[1:2])]).cells[2][1]
     dual_edge = DEC.dual(mesh, edge)
     ccs = [Point(center(x)) for x in [Simplex(edge), obtuse, acute]]
     d1 = DEC.norm(m, ccs[1].coords - ccs[2].coords)
