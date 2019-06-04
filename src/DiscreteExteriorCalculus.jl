@@ -1,4 +1,5 @@
 module DiscreteExteriorCalculus
+
 using StaticArrays: SVector, SMatrix
 using LinearAlgebra: Symmetric
 using UniqueVectors: UniqueVector
@@ -33,8 +34,6 @@ struct Simplex{N, K}
     end
 end
 
-SquareSMatrix{N} = SMatrix{N, N, Float64}
-
 export Metric
 """
     Metric{N, T<:SMatrix{N, N, Float64}}(mat::Symmetric{Float64, T})
@@ -45,7 +44,7 @@ export Metric
 A symmetric but not necessarily positive semi-definite metric. The
 last method creates the Euclidean metric.
 """
-struct Metric{N, T<:SquareSMatrix{N}}
+struct Metric{N, T<:SMatrix{N, N, Float64}}
     mat::Symmetric{Float64, T}
 end
 
@@ -174,7 +173,8 @@ struct Mesh{N,K}
 end
 
 include("utils.jl")
-include("geometry.jl")
+include("metrics.jl")
+include("simplices.jl")
 include("cell_complex.jl")
 include("mesh.jl")
 include("operators.jl")
