@@ -1,5 +1,6 @@
 using Test, DiscreteExteriorCalculus
 const DEC = DiscreteExteriorCalculus
+using LinearAlgebra: norm
 
 @testset "Mesh obtuse triangle" begin
     m = Metric(2)
@@ -45,8 +46,8 @@ end
     # check that the choice of sign was correct
     simplices, bools = zip(mesh.dual.simplices[dual_edge]...)
     @test bools[1] != bools[2]
-    Set(simplices[bools[1] ? 1 : 2]) == Set([ccs[1], ccs[3]])
-    Set(simplices[bools[1] ? 2 : 1]) == Set([ccs[1], ccs[2]])
+    @test Set(simplices[bools[1] ? 1 : 2].points) == Set([ccs[1], ccs[3]])
+    @test Set(simplices[bools[1] ? 2 : 1].points) == Set([ccs[1], ccs[2]])
 end
 
 @testset "honeycomb mesh" begin

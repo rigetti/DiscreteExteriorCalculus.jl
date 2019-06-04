@@ -139,12 +139,12 @@ struct CellComplex{N, K}
     end
 end
 
-SignedSimplex{N} = Tuple{Vector{Point{N}}, Bool}
+SignedSimplex{N, K} = Tuple{Simplex{N, K}, Bool}
 
 export TriangulatedComplex
 """
     TriangulatedComplex{N, K}(complex::CellComplex{N, K},
-        simplices::Dict{Cell{N}, Vector{Tuple{Vector{Point{N}}, Bool}}})
+        simplices::Dict{Cell{N}, Vector{SignedSimplex{N, J} where J}})
     TriangulatedComplex{N,K}() where {N, K}
     TriangulatedComplex(simplices::AbstractVector{Simplex{N, K}}) where {N, K}
 
@@ -154,7 +154,7 @@ each cell.
 """
 struct TriangulatedComplex{N, K}
     complex::CellComplex{N, K}
-    simplices::Dict{Cell{N}, Vector{SignedSimplex{N}}}
+    simplices::Dict{Cell{N}, Vector{SignedSimplex{N, J} where J}}
 end
 
 export Mesh

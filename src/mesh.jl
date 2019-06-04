@@ -5,14 +5,14 @@ import Base: show
 ################################################################################
 
 TriangulatedComplex{N,K}() where {N, K} = TriangulatedComplex{N,K}(
-    CellComplex{N,K}(), Dict{Cell{N}, Vector{SignedSimplex{N}}}())
+    CellComplex{N,K}(), Dict{Cell{N}, Vector{SignedSimplex{N, J} where J}}())
 
 # Create a simplicial TriangulatedComplex from simplices. Creates relative
 # orientations for the cells from the simplices.
 function TriangulatedComplex(simplices::AbstractVector{Simplex{N, K}}) where {N, K}
     # cache to make sure the same simplex isn't turned into a cell twice
     cells = Dict{Set{Point{N}}, Cell{N}}()
-    simplex_mapping = Dict{Cell{N}, Vector{SignedSimplex{N}}}()
+    simplex_mapping = Dict{Cell{N}, Vector{SignedSimplex{N, J} where J}}()
     for k in 1:K
         for simplex in simplices
             for s in subsimplices(simplex, k)
@@ -20,7 +20,7 @@ function TriangulatedComplex(simplices::AbstractVector{Simplex{N, K}}) where {N,
                 if !(key in keys(cells))
                     s_cell = Cell(s)
                     cells[key] = s_cell
-                    simplex_mapping[s_cell] = [(s.points, true)]
+                    simplex_mapping[s_cell] = [(s, true)]
                     for face in subsimplices(s, k-1)
                         face_cell = cells[Set(face.points)]
                         i = findfirst(p -> !(p in face.points), s.points)
@@ -45,7 +45,7 @@ function orientation(ps1::AbstractVector{T}, ps2::AbstractVector{T}, i::Int) whe
 end
 
 signed_volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N =
-    sum([volume(m, Simplex(ps)) * (2 * b - 1) for (ps, b) in tcomp.simplices[c]])
+    sum([volume(m, s) * (2 * b - 1) for (s, b) in tcomp.simplices[c]])
 
 volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N =
     abs(signed_volume(m, tcomp, c))
@@ -83,9 +83,9 @@ function dual(primal::CellComplex{N, K}, center::Function) where {N, K}
     # the dual are constructed in order of dimension
     for k in reverse(1:K)
         for cell in primal.cells[k]
-            signed_elementary_duals = [(map(Point, p[1]), p[2]) for p in
+            signed_elementary_duals = [(Simplex(map(Point, p[1])), p[2]) for p in
                 elementary_duals!(primal_to_elementary_duals, center, cell)]
-            points = unique(vcat([p[1] for p in signed_elementary_duals]...))
+            points = unique(vcat([p[1].points for p in signed_elementary_duals]...))
             dual_cell = Cell(points, K-k+1)
             push!(dual_tcomp.complex, dual_cell)
             dual_tcomp.simplices[dual_cell] = signed_elementary_duals
