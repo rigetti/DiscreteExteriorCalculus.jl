@@ -55,7 +55,8 @@ function elementary_duals!(simplices::Dict{Cell{N}, SignedBarySimplex{N}},
             for (ps, sign) in elementary_duals!(simplices, center, p)
                 opposite_index = first_setdiff_index(ps[1].simplex.points, c.points)
                 new_sign = (ps[1].coords[opposite_index] >= 0) == sign
-                push!(simplices[c], ([c_center, ps...], new_sign))
+                new_barycentrics = (Barycentric{N, K} where K)[c_center, ps...]
+                push!(simplices[c], (new_barycentrics, new_sign))
             end
         end
     end
@@ -72,8 +73,9 @@ function dual(primal::CellComplex{N, K}, center::Function) where {N, K}
     # the dual are constructed in order of dimension
     for k in reverse(1:K)
         for cell in primal.cells[k]
-            signed_elementary_duals = [(Simplex(map(Point, p[1])), p[2]) for p in
-                elementary_duals!(primal_to_elementary_duals, center, cell)]
+            elementary_duals = elementary_duals!(primal_to_elementary_duals, center, cell)
+            signed_elementary_duals = [(Simplex(map(Point, p[1])), p[2])
+                for p in elementary_duals]
             points = unique(vcat([p[1].points for p in signed_elementary_duals]...))
             dual_cell = Cell(points, K-k+1)
             push!(dual_tcomp.complex, dual_cell)
