@@ -1,9 +1,3 @@
-import Base: show
-
-################################################################################
-# TriangulatedComplex
-################################################################################
-
 TriangulatedComplex{N,K}() where {N, K} = TriangulatedComplex{N,K}(
     CellComplex{N,K}(), Dict{Cell{N}, Vector{SignedSimplex{N, J} where J}}())
 
@@ -24,8 +18,8 @@ function TriangulatedComplex(simplices::AbstractVector{Simplex{N, K}}) where {N,
                     for face in subsimplices(s, k-1)
                         face_cell = cells[Set(face.points)]
                         i = findfirst(p -> !(p in face.points), s.points)
-                        o = orientation(face.points, face_cell.points, i-1)
-                        parent!(face_cell, s_cell, o)
+                        pm = sign_of_permutation(face.points, face_cell.points)
+                        parent!(face_cell, s_cell, pm * (1 - 2 * mod(i-1, 2)) > 0)
                     end
                 end
             end
@@ -35,14 +29,9 @@ function TriangulatedComplex(simplices::AbstractVector{Simplex{N, K}}) where {N,
     return TriangulatedComplex{N,K}(complex, simplex_mapping)
 end
 
+import Base: show
 show(io::IO, tcomp::TriangulatedComplex{N,K}) where {N, K} = print(
      io, "TriangulatedComplex{$N,$K}$(tuple(map(length, tcomp.complex.cells)...))")
-
-# if i is even keep the orientation given by the sign_of_permutation, otherwise
-# switch it. see [3] page 12.
-function orientation(ps1::AbstractVector{T}, ps2::AbstractVector{T}, i::Int) where T
-    return sign_of_permutation(ps1, ps2) * (1 - 2 * mod(i, 2)) > 0
-end
 
 signed_volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N =
     sum([volume(m, s) * (2 * b - 1) for (s, b) in tcomp.simplices[c]])
@@ -102,9 +91,9 @@ function dual(primal::CellComplex{N, K}, center::Function) where {N, K}
     return dual_tcomp
 end
 
-################################################################################
+############################################################################################
 # Mesh
-################################################################################
+############################################################################################
 
 Mesh(tcomp::TriangulatedComplex{N}, center::Function) where N =
     Mesh(tcomp, dual(tcomp.complex, center))

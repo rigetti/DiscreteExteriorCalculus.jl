@@ -114,7 +114,8 @@ function sharp(m::Metric{N}, comp::CellComplex{N}, form::AbstractVector{<:Real})
         mat = zeros(length(c.parents), N)
         w = zeros(length(c.parents))
         for (row_ind, e) in enumerate(collect(keys(c.parents)))
-            mat[row_ind, :] = sum([x.points[1].coords * (2 * x.parents[e] - 1) for x in e.children])
+            mat[row_ind, :] = sum([x.points[1].coords * (2 * x.parents[e] - 1)
+                for x in e.children])
             w[row_ind] = form[findfirst(isequal(e), comp.cells[2])]
         end
         push!(field, (mat * m.mat) \ w)

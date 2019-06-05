@@ -28,7 +28,8 @@ function triangulate(points::AbstractVector{Point{2}})
     for t in tess
         t_points = [vd_unscale(p, min_val, max_val)
                     for p in [vd.geta(t), vd.getb(t), vd.getc(t)]]
-        s = Simplex([points[argmin([norm(p.coords - q.coords) for q in points])] for p in t_points])
+        s = Simplex([points[argmin([norm(p.coords - q.coords) for q in points])]
+            for p in t_points])
         push!(triangles, s)
     end
     return TriangulatedComplex(triangles)

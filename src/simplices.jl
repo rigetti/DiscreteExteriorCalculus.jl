@@ -1,11 +1,6 @@
-using StaticArrays: SVector, SMatrix
-using LinearAlgebra: I, Symmetric, det
-import LinearAlgebra: norm
+using StaticArrays: SVector
+using LinearAlgebra: I
 using Combinatorics: combinations
-
-################################################################################
-# Point
-################################################################################
 
 function Point(coords::AbstractVector{<:Real})
     N = length(coords)
@@ -15,10 +10,6 @@ end
 Point(coords::Vararg{<:Real}) = Point(collect(coords))
 
 Point(b::Barycentric) = Point(barycentric_matrix(b.simplex) * b.coords)
-
-################################################################################
-# Simplex
-################################################################################
 
 function Simplex(points::AbstractVector{Point{N}}) where N
     K = length(points)
@@ -31,19 +22,6 @@ function Simplex(c::Cell)
     @assert length(c.points) == c.K
     return Simplex(c.points)
 end
-
-function subsimplices(s::Simplex{N, K}, k::Int) where {N, K}
-    @assert k >= 0
-    if (k == 0) || (k > K)
-        return Simplex{N, k}[]
-    else
-        return [Simplex(ps...) for ps in combinations(s.points, k)]
-    end
-end
-
-################################################################################
-# Barycentric
-################################################################################
 
 function Barycentric(s::Simplex{N, K}, coords::AbstractVector{<:Real}) where {N, K}
     @assert length(coords) == K
@@ -58,12 +36,40 @@ function Barycentric(m::Metric{N}, s::Simplex{N}, p::Point{N}) where N
     return Barycentric(s, coords)
 end
 
+export subsimplices
+"""
+    subsimplices(s::Simplex{N, K}, k::Int) where {N, K}
+
+Find all subsimplices of `s` with dimension `k-1`. If `k == 0` or `k > K`, return an
+empty vector.
+"""
+function subsimplices(s::Simplex{N, K}, k::Int) where {N, K}
+    @assert k >= 0
+    if (k == 0) || (k > K)
+        return Simplex{N, k}[]
+    else
+        return [Simplex(ps...) for ps in combinations(s.points, k)]
+    end
+end
+
+export barycentric_matrix
+"""
+    barycentric_matrix(s::Simplex)
+
+Find the matrix `M` so that `Mx` is the point corresponding to the barycentric
+coordinates `x`.
+"""
 barycentric_matrix(s::Simplex) = hcat([p.coords for p in s.points]...)
 
-# Extremize norm_square(m, p - b * x) over x constrained by sum(x) == 1 where
-# b = barycentric_matrix(s) to find the barycentric coordinates of the
-# projection of p onto the affine subspace of s.
-# The answer can be written in the form x = A * p + B. Return A, B.
+export barycentric_projection_matrices
+"""
+    barycentric_projection_matrices(m::Metric{N}, s::Simplex{N, K}) where {N, K}
+
+For a vector `p`, extremize `norm_square(m, p - barycentric_matrix(s) * x)` over `x`
+with the constraint `sum(x) == 1`. The result is the barycentric coordinates of the
+projection of `p` onto the affine subspace spanned by `s` and it can be written in the form
+`x = A * p + B`. Return `A`, `B`.
+"""
 function barycentric_projection_matrices(m::Metric{N}, s::Simplex{N, K}) where {N, K}
     b = barycentric_matrix(s)
     # solve sum(x) == 1 by saying x = c * y + d
@@ -75,27 +81,56 @@ function barycentric_projection_matrices(m::Metric{N}, s::Simplex{N, K}) where {
     return A, B
 end
 
-# The squared distance from a point with barycentric coordinates x to a point p
-# can be written in the form xᵀAx + Bᵀx where B depends on p but A does not.
-# See Theorem 2 in [1].
+export distance_quadratic
+"""
+    distance_quadratic(m::Metric{N}, s::Simplex{N})
+
+The squared distance from a point with barycentric coordinates `x` to a point `p`
+can be written in the form `xᵀAx + Bᵀx` where `B` depends on `p` but `A` does not. Return A.
+"""
 distance_quadratic(m::Metric{N}, s::Simplex{N}) where N = -.5 * circumsphere_matrix(m, s)
 
+export distance_linear
+"""
+    distance_linear(m::Metric{N}, s::Simplex{N}, p::Point{N})
+
+The squared distance from a point with barycentric coordinates `x` to a point `p`
+can be written in the form `xᵀAx + Bᵀx` where `B` depends on `p` but `A` does not. Return B.
+"""
 distance_linear(m::Metric{N}, s::Simplex{N}, p::Point{N}) where N = [norm_square(
     m, p.coords - q.coords) for q in s.points]
 
+export distance_square
+"""
+    distance_square(m::Metric{N}, b::Barycentric{N}, p::Point{N}) where N
+
+Find the squared distance between the points `Point(b)` and `p`. Note that this
+value can be negative if the metric is not positive semi-definite.
+"""
 function distance_square(m::Metric{N}, b::Barycentric{N}, p::Point{N}) where N
     A = distance_quadratic(m, b.simplex)
     B = distance_linear(m, b.simplex, p)
     return transpose(b.coords) * A * b.coords + transpose(B) * b.coords
 end
 
+export circumsphere_matrix
+"""
+    circumsphere_matrix(m::Metric{N}, s::Simplex{N}) where N
+
+If `x` are the barycentric coordinates of the circumcenter of `s` then there is a matrix M
+such that `M * x = 2 * R² * ones(K)` where `R²` is the square circumradius. Return M.
+"""
 function circumsphere_matrix(m::Metric{N}, s::Simplex{N}) where N
     norm_squares = [[norm_square(m, p.coords - q.coords) for p in s.points] for q in s.points]
     return transpose(hcat(norm_squares...))
 end
 
-# The circumcenter satisfies circumsphere_matrix(s) * x = 2 * R^2 * ones(K)
-# where R^2 is the squared circumradius. Return x, R^2.
+export circumsphere_barycentric
+"""
+    circumsphere_barycentric(m::Metric{N}, s::Simplex{N, K}) where {N, K}
+
+Find the Barycentric of the circumcenter and the squared circumradius.
+"""
 function circumsphere_barycentric(m::Metric{N}, s::Simplex{N, K}) where {N, K}
     if K == 1
         return Barycentric(s, [1.0]), 0
@@ -106,15 +141,44 @@ function circumsphere_barycentric(m::Metric{N}, s::Simplex{N, K}) where {N, K}
     end
 end
 
+export circumsphere
+"""
+    circumsphere(m::Metric{N}, s::Simplex{N}) where N
+
+Find the circumcenter and the squared circumradius.
+"""
 function circumsphere(m::Metric{N}, s::Simplex{N}) where N
     b, R² = circumsphere_barycentric(m, s)
     return Point(b), R²
 end
 
-# find the linear equation of the affine subspace of the affine space of s
-# specified by requiring that the projection onto f is the same as that for p
+export circumcenter
+"""
+    circumcenter(m::Metric{N}) where N
+
+Return a function taking a `Simplex{N}` to the Barycentric of its circumcenter.
+"""
+circumcenter(m::Metric{N}) where N = s::Simplex{N} -> circumsphere_barycentric(m, s)[1]
+
+export centroid
+"""
+    centroid(s::Simplex{N, K}) where {N, K}
+
+Compute the Barycentric of the centroid of a simplex.
+"""
+centroid(s::Simplex{N, K}) where {N, K} = Barycentric(s, SVector{K, Float64}(ones(K)/K))
+
+"""
+    barycentric_subspace(m::Metric{N}, s::Simplex{N, K}, f::Simplex{N, J},
+        p::Point{N}) where {N, K, J}
+
+Let `s` and `f` be simplices where `f` lies in the affine subspace spanned by `s`. For a
+point `p`, the subset of points with the same projection onto `f` as that of `p` is a line.
+This line can be represented in the form `Mx = v` where `x` are barycentric coordinates
+with respect to `s`. Return M and v.
+"""
 function barycentric_subspace(m::Metric{N}, s::Simplex{N, K}, f::Simplex{N, J},
-                              p::Point{N}) where {N, K, J}
+    p::Point{N}) where {N, K, J}
     @assert J <= K
     # require that the projection of x onto f is the same as for p
     A, _ = barycentric_projection_matrices(m, f)
@@ -127,9 +191,13 @@ function barycentric_subspace(m::Metric{N}, s::Simplex{N, K}, f::Simplex{N, J},
     return M, v
 end
 
-# let s be a simplex, q = s.points[i], and f the face of s opposite q.
-# Rotate the point p about f into the affine subspace of s but on the halfspace
-# of f not containing q.
+"""
+    rotate_about_face(m::Metric{N}, s::Simplex{N, K}, p::Point{N}, i::Int) where {N, K}
+
+Let `s` be a simplex, `q = s.points[i]`, and `f` the face of `s` opposite `q`. Rotate the
+point `p` about `f` into the affine subspace spanned by `s` and on the halfspace bounded
+by `f` that does not contain `q`.
+"""
 function rotate_about_face(m::Metric{N}, s::Simplex{N, K}, p::Point{N}, i::Int) where {N, K}
     f = Simplex(s.points[filter(j -> j != i, 1:K)])
     a, b = parametrize_subspace(barycentric_subspace(m, s, f, p)...)
@@ -141,10 +209,14 @@ function rotate_about_face(m::Metric{N}, s::Simplex{N, K}, p::Point{N}, i::Int) 
     return Barycentric(s, x)
 end
 
-# given two simplices s1 and s2 that share a face, rotate s2 into the
-# affine subspace of s1 and then check where its point not in s1 is mapped
-# to in relation to the circumsphere of s1. > 0 indicates outside, 0 indicates
-# boundary, < 0 indicates inside. See [2].
+"""
+    pairwise_delaunay(m::Metric{N}, s1::Simplex{N, K}, s2::Simplex{N, K}) where {N, K}
+
+Given two simplices `s1` and `s2` that share a face, rotate `s2` into the affine subspace
+spanned by `s1`. Let `p` be the image of the the point of `s2` that is not in `s1` under
+this rotation and let `c` and `R²` be the circumcenter and squared circumradius of `s1`.
+Return the squared distance from `p` to `c` minus `R²`.
+"""
 function pairwise_delaunay(m::Metric{N}, s1::Simplex{N, K}, s2::Simplex{N, K}) where {N, K}
     face_points = Point{N}[]
     i = 0
@@ -161,10 +233,3 @@ function pairwise_delaunay(m::Metric{N}, s1::Simplex{N, K}, s2::Simplex{N, K}) w
     b = rotate_about_face(m, s1, p, i)
     return transpose(b.coords) * distance_quadratic(m, s1) * b.coords
 end
-
-# functions for computing simplex centers
-export circumcenter
-circumcenter(m::Metric{N}) where N = s::Simplex{N} -> circumsphere_barycentric(m, s)[1]
-
-export centroid
-centroid(s::Simplex{N, K}) where {N, K} = Barycentric(s, SVector{K, Float64}(ones(K)/K))

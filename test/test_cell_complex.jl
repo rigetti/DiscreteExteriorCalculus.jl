@@ -3,11 +3,6 @@ const DEC = DiscreteExteriorCalculus
 using Combinatorics: combinations
 
 @testset "relative orientation" begin
-    @test DEC.orientation([1,2], [1,2], 0)
-    @test !DEC.orientation([1,2], [1,2], 1)
-    @test DEC.orientation([1,2], [2,1], 1)
-    @test !DEC.orientation([1,2], [2,1], 0)
-
     s = Simplex(Point(0,0,0), Point(1,0,0))
     comp = CellComplex([s])
     for v in comp.cells[1]
