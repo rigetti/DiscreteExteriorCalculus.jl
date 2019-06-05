@@ -41,6 +41,7 @@ export SimpleSimplex
     SimpleSimplex{N}(Vector{Point{N}}) where N
     SimpleSimplex(points::AbstractVector{Point{N}}) where N
     SimpleSimplex(s::Simplex)
+    SimpleSimplex(s::Vector{SimpleBarycentric{N}}) where N
 
 Like a `simplex` but without statically storing the dimension.
 """

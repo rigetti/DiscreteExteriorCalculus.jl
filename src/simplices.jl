@@ -31,6 +31,8 @@ SimpleSimplex(points::AbstractVector{Point{N}}) where N = SimpleSimplex{N}(colle
 
 SimpleSimplex(s::Simplex) = SimpleSimplex(s.points)
 
+SimpleSimplex(s::Vector{SimpleBarycentric{N}}) where N = SimpleSimplex(map(Point, s))
+
 function Barycentric(s::Simplex{N, K}, coords::AbstractVector{<:Real}) where {N, K}
     @assert length(coords) == K
     return Barycentric{N, K}(s, SVector{K, Float64}(coords))

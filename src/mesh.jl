@@ -42,12 +42,12 @@ volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N =
 # simplices is a mapping from primal cells to dual elementary cells
 # specified as Barycentrics along with signs.
 # center takes a Simplex{N, K} and returns a Barycentric{N, K}.
-SignedSimpleBarySimplex{N} = Vector{Tuple{Vector{SimpleBarycentric{N}}, Bool}}
-function elementary_duals!(simplices::Dict{Cell{N}, SignedSimpleBarySimplex{N}},
+SimpleBarySimplex{N} = Vector{SimpleBarycentric{N}}
+function elementary_duals!(simplices::Dict{Cell{N}, Vector{Tuple{SimpleBarySimplex{N}, Bool}}},
     center::Function, c::Cell{N}) where N
     if !(c in keys(simplices))
         c_center = SimpleBarycentric(center(Simplex(c)))
-        simplices[c] = SignedSimpleBarySimplex{N}[]
+        simplices[c] = Tuple{SimpleBarySimplex{N}, Bool}[]
         if isempty(c.parents)
             push!(simplices[c], ([c_center], true))
         end
@@ -67,14 +67,15 @@ end
 # center takes a Simplex{N} and returns a Point{N}.
 function dual(primal::CellComplex{N, K}, center::Function) where {N, K}
     dual_tcomp = TriangulatedComplex{N, K}()
-    primal_to_elementary_duals = Dict{Cell{N}, SignedSimpleBarySimplex{N}}()
+    primal_to_elementary_duals = Dict{Cell{N}, Vector{Tuple{SimpleBarySimplex{N}, Bool}}}()
     primal_to_duals = Dict{Cell{N}, Cell{N}}()
     # iterate from high to low dimension so the cells of
     # the dual are constructed in order of dimension
     for k in reverse(1:K)
         for cell in primal.cells[k]
             elementary_duals = elementary_duals!(primal_to_elementary_duals, center, cell)
-            signed_elementary_duals = [(SimpleSimplex(map(Point, p[1])), p[2]) for p in elementary_duals]
+            signed_elementary_duals = [(SimpleSimplex(p[1]), p[2])
+                for p in elementary_duals]
             points = unique(vcat([p[1].points for p in signed_elementary_duals]...))
             dual_cell = Cell(points, K-k+1)
             push!(dual_tcomp.complex, dual_cell)
