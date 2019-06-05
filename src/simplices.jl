@@ -11,6 +11,8 @@ Point(coords::Vararg{<:Real}) = Point(collect(coords))
 
 Point(b::Barycentric) = Point(barycentric_matrix(b.simplex) * b.coords)
 
+Point(b::SimpleBarycentric) = Point(Barycentric(b))
+
 function Simplex(points::AbstractVector{Point{N}}) where N
     K = length(points)
     return Simplex{N, K}(SVector{K, Point{N}}(points))
@@ -22,6 +24,12 @@ function Simplex(c::Cell)
     @assert length(c.points) == c.K
     return Simplex(c.points)
 end
+
+Simplex(s::SimpleSimplex) = Simplex(s.points)
+
+SimpleSimplex(points::AbstractVector{Point{N}}) where N = SimpleSimplex{N}(collect(points))
+
+SimpleSimplex(s::Simplex) = SimpleSimplex(s.points)
 
 function Barycentric(s::Simplex{N, K}, coords::AbstractVector{<:Real}) where {N, K}
     @assert length(coords) == K
@@ -35,6 +43,13 @@ function Barycentric(m::Metric{N}, s::Simplex{N}, p::Point{N}) where N
     coords = A * p.coords + B
     return Barycentric(s, coords)
 end
+
+Barycentric(b::SimpleBarycentric) = Barycentric(Simplex(b.simplex), b.coords)
+
+SimpleBarycentric(s::SimpleSimplex{N}, coords::AbstractVector{<:Real}) where N =
+    SimpleBarycentric{N}(s, collect(coords))
+
+SimpleBarycentric(b::Barycentric) = SimpleBarycentric(SimpleSimplex(b.simplex), b.coords)
 
 export subsimplices
 """

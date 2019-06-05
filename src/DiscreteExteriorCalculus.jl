@@ -10,6 +10,7 @@ export Point
     Point(coords::AbstractVector{<:Real})
     Point(coords::Vararg{<:Real})
     Point(b::Barycentric)
+    Point(b::SimpleBarycentric)
 
 A point in `N` dimensional space.
 """
@@ -23,6 +24,7 @@ export Simplex
     Simplex(points::AbstractVector{Point{N}}) where N
     Simplex(points::Vararg{Point{N}}) where N
     Simplex(c::Cell)
+    Simplex(s::SimpleSimplex)
 
 A simplex of dimension `K-1` embedded in `N` dimensional space.
 """
@@ -32,6 +34,18 @@ struct Simplex{N, K}
         @assert 1 <= K <= N+1
         return new{N, K}(points)
     end
+end
+
+export SimpleSimplex
+"""
+    SimpleSimplex{N}(Vector{Point{N}}) where N
+    SimpleSimplex(points::AbstractVector{Point{N}}) where N
+    SimpleSimplex(s::Simplex)
+
+Like a `simplex` but without statically storing the dimension.
+"""
+struct SimpleSimplex{N}
+    points::Vector{Point{N}}
 end
 
 export Metric
@@ -67,6 +81,7 @@ export Barycentric
     Barycentric(s::Simplex{N, K}, coords::AbstractVector{<:Real}) where {N, K}
     Barycentric(s::Simplex, coords::Vararg{<:Real})
     Barycentric(m::Metric{N}, s::Simplex{N}, p::Point{N}) where N
+    Barycentric(b::SimpleBarycentric)
 
 A representation of a point with respect to a simplex using barycentric coordinates. If the
 simplex `s` has vertices `Aᵢ` and `x=coords` then the point represented by
@@ -86,6 +101,26 @@ struct Barycentric{N, K}
     end
 end
 
+export SimpleBarycentric
+"""
+    SimpleBarycentric{N}(s::SimpleSimplex{N}, coords::Vector{Float64}) where N
+    SimpleBarycentric(s::SimpleSimplex{N}, coords::AbstractVector{<:Real}) where N
+    SimpleBarycentric(b::Barycentric)
+
+Like a `Barycentric` but without statically storing the dimension of the simplex.
+"""
+struct SimpleBarycentric{N}
+    simplex::SimpleSimplex{N}
+    coords::Vector{Float64}
+    function SimpleBarycentric{N}(simplex::SimpleSimplex{N}, coords::Vector{Float64}) where N
+        @assert length(simplex.points) == length(coords)
+        @assert sum(coords) ≈ 1
+        if sum(coords) != 1
+            coords = [coords[1:end-1]..., 1 - sum(coords[1:end-1])]
+        end
+        return new{N}(simplex, coords)
+    end
+end
 
 export Cell
 """
@@ -138,12 +173,12 @@ struct CellComplex{N, K}
     end
 end
 
-SignedSimplex{N, K} = Tuple{Simplex{N, K}, Bool}
+SignedSimpleSimplex{N} = Tuple{SimpleSimplex{N}, Bool}
 
 export TriangulatedComplex
 """
     TriangulatedComplex{N, K}(complex::CellComplex{N, K},
-        simplices::Dict{Cell{N}, Vector{SignedSimplex{N, J} where J}})
+        simplices::Dict{Cell{N}, Vector{Tuple{SimpleSimplex{N}, Bool}})
     TriangulatedComplex{N,K}() where {N, K}
     TriangulatedComplex(simplices::AbstractVector{Simplex{N, K}}) where {N, K}
 
@@ -152,7 +187,7 @@ comes with signs which are used to compute a signed volume for each cell.
 """
 struct TriangulatedComplex{N, K}
     complex::CellComplex{N, K}
-    simplices::Dict{Cell{N}, Vector{SignedSimplex{N, J} where J}}
+    simplices::Dict{Cell{N}, Vector{SignedSimpleSimplex{N}}}
 end
 
 export Mesh

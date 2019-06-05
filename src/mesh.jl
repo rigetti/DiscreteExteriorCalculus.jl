@@ -1,12 +1,12 @@
 TriangulatedComplex{N,K}() where {N, K} = TriangulatedComplex{N,K}(
-    CellComplex{N,K}(), Dict{Cell{N}, Vector{SignedSimplex{N, J} where J}}())
+    CellComplex{N,K}(), Dict{Cell{N}, Vector{SignedSimpleSimplex{N}}}())
 
 # Create a simplicial TriangulatedComplex from simplices. Creates relative
 # orientations for the cells from the simplices.
 function TriangulatedComplex(simplices::AbstractVector{Simplex{N, K}}) where {N, K}
     # cache to make sure the same simplex isn't turned into a cell twice
     cells = Dict{Set{Point{N}}, Cell{N}}()
-    simplex_mapping = Dict{Cell{N}, Vector{SignedSimplex{N, J} where J}}()
+    simplex_mapping = Dict{Cell{N}, Vector{SignedSimpleSimplex{N}}}()
     for k in 1:K
         for simplex in simplices
             for s in subsimplices(simplex, k)
@@ -14,7 +14,7 @@ function TriangulatedComplex(simplices::AbstractVector{Simplex{N, K}}) where {N,
                 if !(key in keys(cells))
                     s_cell = Cell(s)
                     cells[key] = s_cell
-                    simplex_mapping[s_cell] = [(s, true)]
+                    simplex_mapping[s_cell] = [(SimpleSimplex(s), true)]
                     for face in subsimplices(s, k-1)
                         face_cell = cells[Set(face.points)]
                         i = findfirst(p -> !(p in face.points), s.points)
@@ -34,7 +34,7 @@ show(io::IO, tcomp::TriangulatedComplex{N,K}) where {N, K} = print(
      io, "TriangulatedComplex{$N,$K}$(tuple(map(length, tcomp.complex.cells)...))")
 
 signed_volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N =
-    sum([volume(m, s) * (2 * b - 1) for (s, b) in tcomp.simplices[c]])
+    sum([volume(m, Simplex(s)) * (2 * b - 1) for (s, b) in tcomp.simplices[c]])
 
 volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N =
     abs(signed_volume(m, tcomp, c))
@@ -42,12 +42,12 @@ volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N =
 # simplices is a mapping from primal cells to dual elementary cells
 # specified as Barycentrics along with signs.
 # center takes a Simplex{N, K} and returns a Barycentric{N, K}.
-SignedBarySimplex{N} = Vector{Tuple{Vector{Barycentric{N, K} where K}, Bool}}
-function elementary_duals!(simplices::Dict{Cell{N}, SignedBarySimplex{N}},
+SignedSimpleBarySimplex{N} = Vector{Tuple{Vector{SimpleBarycentric{N}}, Bool}}
+function elementary_duals!(simplices::Dict{Cell{N}, SignedSimpleBarySimplex{N}},
     center::Function, c::Cell{N}) where N
     if !(c in keys(simplices))
-        c_center = center(Simplex(c))
-        simplices[c] = SignedBarySimplex{N}[]
+        c_center = SimpleBarycentric(center(Simplex(c)))
+        simplices[c] = SignedSimpleBarySimplex{N}[]
         if isempty(c.parents)
             push!(simplices[c], ([c_center], true))
         end
@@ -55,7 +55,7 @@ function elementary_duals!(simplices::Dict{Cell{N}, SignedBarySimplex{N}},
             for (ps, sign) in elementary_duals!(simplices, center, p)
                 opposite_index = first_setdiff_index(ps[1].simplex.points, c.points)
                 new_sign = (ps[1].coords[opposite_index] >= 0) == sign
-                new_barycentrics = (Barycentric{N, K} where K)[c_center, ps...]
+                new_barycentrics = [c_center, ps...]
                 push!(simplices[c], (new_barycentrics, new_sign))
             end
         end
@@ -67,15 +67,14 @@ end
 # center takes a Simplex{N} and returns a Point{N}.
 function dual(primal::CellComplex{N, K}, center::Function) where {N, K}
     dual_tcomp = TriangulatedComplex{N, K}()
-    primal_to_elementary_duals = Dict{Cell{N}, SignedBarySimplex{N}}()
+    primal_to_elementary_duals = Dict{Cell{N}, SignedSimpleBarySimplex{N}}()
     primal_to_duals = Dict{Cell{N}, Cell{N}}()
     # iterate from high to low dimension so the cells of
     # the dual are constructed in order of dimension
     for k in reverse(1:K)
         for cell in primal.cells[k]
             elementary_duals = elementary_duals!(primal_to_elementary_duals, center, cell)
-            signed_elementary_duals = [(Simplex(map(Point, p[1])), p[2])
-                for p in elementary_duals]
+            signed_elementary_duals = [(SimpleSimplex(map(Point, p[1])), p[2]) for p in elementary_duals]
             points = unique(vcat([p[1].points for p in signed_elementary_duals]...))
             dual_cell = Cell(points, K-k+1)
             push!(dual_tcomp.complex, dual_cell)
