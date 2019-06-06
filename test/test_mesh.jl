@@ -1,5 +1,4 @@
 using Test, DiscreteExteriorCalculus
-const DEC = DiscreteExteriorCalculus
 using LinearAlgebra: norm
 
 @testset "Mesh obtuse triangle" begin
@@ -29,20 +28,20 @@ end
     obtuse = Simplex(points[1:3])
     acute = Simplex(points[1], points[2], points[4])
     m = Metric(2)
-    b, _ = DEC.circumsphere_barycentric(m, obtuse)
+    b, _ = circumsphere_barycentric(m, obtuse)
     @test any(b.coords .< 0) # obtuse
-    b, _ = DEC.circumsphere_barycentric(m, acute)
+    b, _ = circumsphere_barycentric(m, acute)
     @test !any(b.coords .< 0) # acute
     tcomp = TriangulatedComplex([acute, obtuse])
     center = circumcenter(m)
     mesh = Mesh(tcomp, center)
     # check that the length of the edge between the cells is correct
     edge = subcomplex(mesh.primal.complex, [Simplex(points[1:2])]).cells[2][1]
-    dual_edge = DEC.dual(mesh, edge)
+    dual_edge = dual(mesh, edge)
     ccs = [Point(center(x)) for x in [Simplex(edge), obtuse, acute]]
     d1 = norm(m, ccs[1].coords - ccs[2].coords)
     d2 = norm(m, ccs[1].coords - ccs[3].coords)
-    @test abs(DEC.volume(m, mesh.dual, DEC.dual(mesh, edge))) == abs(d1 - d2)
+    @test abs(volume(m, mesh.dual, dual(mesh, edge))) == abs(d1 - d2)
     # check that the choice of sign was correct
     simplices, bools = zip(mesh.dual.simplices[dual_edge]...)
     @test bools[1] != bools[2]
@@ -54,26 +53,26 @@ end
     basis = [[1,0], [.5, .5 * sqrt(3)]]
     n = 5
     points = [Point((basis[1] * i + basis[2] * j)...) for i in 1:n for j in 1:n]
-    tcomp = DEC.triangulate(points)
+    tcomp = triangulate(points)
     m = Metric(2)
     mesh = Mesh(tcomp, centroid)
     for c in mesh.primal.complex.cells[1]
-        @test DEC.volume(m, mesh.primal, c) == 1
+        @test volume(m, mesh.primal, c) == 1
     end
     for c in mesh.primal.complex.cells[2]
-        @test DEC.volume(m, mesh.primal, c) ≈ 1
+        @test volume(m, mesh.primal, c) ≈ 1
     end
     for c in mesh.primal.complex.cells[3]
-        @test DEC.volume(m, mesh.primal, c) ≈ sqrt(3)/4
+        @test volume(m, mesh.primal, c) ≈ sqrt(3)/4
     end
     for c in mesh.dual.complex.cells[1]
-        @test DEC.volume(m, mesh.dual, c) == 1
+        @test volume(m, mesh.dual, c) == 1
     end
     for c in mesh.dual.complex.cells[2]
-        @test DEC.volume(m, mesh.dual, c) ≈ sqrt(3)/6 * length(c.children)
+        @test volume(m, mesh.dual, c) ≈ sqrt(3)/6 * length(c.children)
     end
     for c in mesh.dual.complex.cells[3]
         k = length(c.children)
-        @test DEC.volume(m, mesh.dual, c) ≈ (sqrt(3)/12) * (k == 6 ? k : k-1)
+        @test volume(m, mesh.dual, c) ≈ (sqrt(3)/12) * (k == 6 ? k : k-1)
     end
 end

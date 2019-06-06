@@ -1,8 +1,6 @@
 TriangulatedComplex{N,K}() where {N, K} = TriangulatedComplex{N,K}(
     CellComplex{N,K}(), Dict{Cell{N}, Vector{SignedSimpleSimplex{N}}}())
 
-# Create a simplicial TriangulatedComplex from simplices. Creates relative
-# orientations for the cells from the simplices.
 function TriangulatedComplex(simplices::AbstractVector{Simplex{N, K}}) where {N, K}
     # cache to make sure the same simplex isn't turned into a cell twice
     cells = Dict{Set{Point{N}}, Cell{N}}()
@@ -33,16 +31,39 @@ import Base: show
 show(io::IO, tcomp::TriangulatedComplex{N,K}) where {N, K} = print(
      io, "TriangulatedComplex{$N,$K}$(tuple(map(length, tcomp.complex.cells)...))")
 
+Mesh(tcomp::TriangulatedComplex{N}, center::Function) where N =
+    Mesh(tcomp, dual(tcomp.complex, center))
+
+show(io::IO, m::Mesh{N,K}) where {N, K} = print(io, "Mesh{$N,$K}($(m.primal), $(m.dual))")
+
+export signed_volume
+"""
+    signed_volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N
+
+Find the signed volume of a cell in a TriangulatedComplex.
+"""
 signed_volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N =
     sum([volume(m, Simplex(s)) * (2 * b - 1) for (s, b) in tcomp.simplices[c]])
 
+export volume
+"""
+    signed_volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N
+
+Find the absolute value of the signed volume of a cell in a TriangulatedComplex.
+"""
 volume(m::Metric{N}, tcomp::TriangulatedComplex{N}, c::Cell{N}) where N =
     abs(signed_volume(m, tcomp, c))
 
-# simplices is a mapping from primal cells to dual elementary cells
-# specified as Barycentrics along with signs.
-# center takes a Simplex{N, K} and returns a Barycentric{N, K}.
 SimpleBarySimplex{N} = Vector{SimpleBarycentric{N}}
+
+"""
+    elementary_duals!(simplices::Dict{Cell{N}, Vector{Tuple{SimpleBarySimplex{N}, Bool}}},
+        center::Function, c::Cell{N}) where N
+
+Compute the elementary dual simplices of `cell`. `simplices` is a mapping from primal cells
+to dual elementary simplices, specified as Barycentrics along with signs, and is used for
+memoization. `center` is a function that takes a `Simplex{N, K}` to a `Barycentric{N, K}`.
+"""
 function elementary_duals!(simplices::Dict{Cell{N}, Vector{Tuple{SimpleBarySimplex{N}, Bool}}},
     center::Function, c::Cell{N}) where N
     if !(c in keys(simplices))
@@ -63,8 +84,13 @@ function elementary_duals!(simplices::Dict{Cell{N}, Vector{Tuple{SimpleBarySimpl
     return simplices[c]
 end
 
-# compute the dual TriangulatedComplex for a simplicial CellComplex primal.
-# center takes a Simplex{N} and returns a Point{N}.
+export dual
+"""
+    dual(primal::CellComplex{N, K}, center::Function) where {N, K}
+
+Compute the dual TriangulatedComplex of a simplicial complex. `center` is a function that
+takes a `Simplex{N, K}` to a `Barycentric{N, K}`.
+"""
 function dual(primal::CellComplex{N, K}, center::Function) where {N, K}
     dual_tcomp = TriangulatedComplex{N, K}()
     primal_to_elementary_duals = Dict{Cell{N}, Vector{Tuple{SimpleBarySimplex{N}, Bool}}}()
@@ -93,16 +119,11 @@ function dual(primal::CellComplex{N, K}, center::Function) where {N, K}
     return dual_tcomp
 end
 
-############################################################################################
-# Mesh
-############################################################################################
+"""
+    dual(mesh::Mesh{N, K}, c::Cell{N}) where {N, K}
 
-Mesh(tcomp::TriangulatedComplex{N}, center::Function) where N =
-    Mesh(tcomp, dual(tcomp.complex, center))
-
-show(io::IO, m::Mesh{N,K}) where {N, K} = print(io, "Mesh{$N,$K}($(m.primal), $(m.dual))")
-
-# get the dual of a cell
+Find the dual cell of `c` in `mesh`.
+"""
 function dual(mesh::Mesh{N, K}, c::Cell{N}) where {N, K}
     primal = mesh.primal.complex
     dual = mesh.dual.complex

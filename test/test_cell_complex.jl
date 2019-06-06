@@ -1,5 +1,4 @@
 using Test, DiscreteExteriorCalculus
-const DEC = DiscreteExteriorCalculus
 using Combinatorics: combinations
 
 @testset "relative orientation" begin

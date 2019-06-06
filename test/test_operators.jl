@@ -10,13 +10,15 @@ using SparseArrays: sparse, spzeros
         basis = [[1,0], [.5, .5 * sqrt(3)]]
         n = 10
         points = [Point((basis[1] * i + basis[2] * j)...) for i in 1:n for j in 1:n]
-        tcomp = DEC.triangulate(points)
+        tcomp = triangulate(points)
         comp = tcomp.complex
         @test simplicial(comp)
         @test one_sided(m, comp)
         @test pairwise_delaunay(m, comp)
         @test well_centered(m, comp)
         mesh = Mesh(tcomp, circumcenter(m))
+        N, K = 2, 3
+        @test typeof(mesh) <: Mesh{N, K}
     end
     # test hodge star
     begin
@@ -70,7 +72,7 @@ using SparseArrays: sparse, spzeros
     end
     # test differential_operator
     begin
-        @test differential_operator_sequence(m, mesh, "★d★d", 1, true) ==
+        differential_operator_sequence(m, mesh, "★d★d", 1, true) ==
             [dual_★s[3], dual_ds[2],★s[2],ds[1]]
         @test differential_operator(m, mesh, "★d★d", 1, true) ==
             dual_★s[3] * dual_ds[2] * ★s[2] * ds[1]
@@ -82,7 +84,11 @@ using SparseArrays: sparse, spzeros
                 @test count(!iszero, differential_operator(m, mesh, "dd", k, primal)) == 0 # d² = 0
             end
             for (k, s) in zip(1:3, [1,-1,1])
-                @test count(!iszero, differential_operator(m, mesh, "★★", k, primal) - I*s) == 0 # ★★ ∝ I
+                ★★ = differential_operator(m, mesh, "★★", k, primal)
+                @test count(!iszero, ★★ - I*s) == 0 # ★★ ∝ I
+                ★★ = differential_operator(m, mesh, "★", K-k+1, !primal) *
+                    differential_operator(m, mesh, "★", k, primal)
+                @test count(!iszero, ★★ - I*s) == 0 # ★★ ∝ I
             end
         end
     end

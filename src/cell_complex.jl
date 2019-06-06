@@ -21,6 +21,11 @@ CellComplex{N,K}(cells::AbstractVector{Cell{N}}) where {N, K} =
 CellComplex(simplices::AbstractVector{Simplex{N, K}}) where {N, K} =
     TriangulatedComplex(simplices).complex
 
+"""
+    CellComplex(cells::AbstractVector{Cell{N}}) where N
+
+Create a cell complex consisting of `cells` and all descendants of `cells`.
+"""
 function CellComplex(cells::AbstractVector{Cell{N}}) where N
     K = maximum(c.K for c in cells)
     comp = CellComplex{N, K}(cells)

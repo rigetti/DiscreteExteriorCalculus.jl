@@ -40,6 +40,12 @@ end
 
 Barycentric(s::Simplex, coords::Vararg{<:Real}) = Barycentric(s, collect(coords))
 
+"""
+    Barycentric(m::Metric{N}, s::Simplex{N}, p::Point{N}) where N
+
+Find the Barycentric for the projection of a point onto the affine subspace spanned by a
+simplex.
+"""
 function Barycentric(m::Metric{N}, s::Simplex{N}, p::Point{N}) where N
     A, B = barycentric_projection_matrices(m, s)
     coords = A * p.coords + B

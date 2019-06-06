@@ -6,6 +6,11 @@ function Metric(mat::AbstractMatrix{<:Real})
     return Metric(SMatrix{N, N, Float64}(mat))
 end
 
+"""
+    Metric(N::Int)
+
+The Euclidean metric in `N` dimensions.
+"""
 Metric(N::Int) = Metric(SMatrix{N,N}(1.0I))
 
 function Wedge(vectors::Vector{SVector{N, Float64}}) where N
@@ -13,6 +18,11 @@ function Wedge(vectors::Vector{SVector{N, Float64}}) where N
     Wedge{N, K}(SVector{K, SVector{N, Float64}}(vectors))
 end
 
+"""
+    Wedge(s::Simplex{N, K}) where {N, K}
+
+The wedge product of all vectors emanating from the first vertex of a simplex.
+"""
 function Wedge(s::Simplex{N, K}) where {N, K}
     vectors = SVector{N, Float64}[p.coords - s.points[1].coords for p in s.points[2:end]]
     return Wedge(vectors)
@@ -55,8 +65,8 @@ import LinearAlgebra: norm
     norm(m::Metric{N}, v::SVector{N, Float64}) where N
     norm(m::Metric{N}, w::Wedge{N}) where N
 
-Compute the square root of the magnitude of the inner product of a vector `v` with
-itself with respect to the metric `m`.
+Compute the square root of the magnitude of the inner product of a vector with itself with
+respect to the metric `m`.
 """
 norm(m::Metric{N}, v::SVector{N, Float64}) where N = sqrt(abs(norm_square(m, v)))
 

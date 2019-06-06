@@ -25,7 +25,7 @@ end
     ps = [s.points; Point(3,5,7); Point(-12,25,-100); Point(24.3,-3.5,-2.2)]
     for p1 in ps
         for p2 in ps
-            d1 = sqrt(abs(DEC.distance_square(m, Barycentric(m, s, p1), p2)))
+            d1 = sqrt(abs(distance_square(m, Barycentric(m, s, p1), p2)))
             d2 = norm(m, p1.coords - p2.coords)
             d3 = norm(p1.coords - p2.coords) # using Euclidean metric
             @test d2 ≈ d3
@@ -44,14 +44,14 @@ end
         end
     end
     function circumradius_square(m::Metric{N}, s::Simplex{N}) where N
-        center, _ = DEC.circumsphere(m, s)
-        return mean([DEC.norm_square(m, center.coords - v.coords) for v in s.points])
+        center, _ = circumsphere(m, s)
+        return mean([norm_square(m, center.coords - v.coords) for v in s.points])
     end
     m = Metric(3)
     s = Simplex(Point(1,2,3), Point(-12,3,5), Point(8,3,4), Point(9,25,-2))
     for k in 1:4
-        for sub_s in DEC.subsimplices(s, k)
-            center, radius_square = DEC.circumsphere(m, sub_s)
+        for sub_s in subsimplices(s, k)
+            center, radius_square = circumsphere(m, sub_s)
             @test is_circumcenter(m, sub_s, center)
             @test radius_square ≈ circumradius_square(m, sub_s)
         end
@@ -89,7 +89,7 @@ end
 @testset "pairwise_delaunay" begin
     m = Metric(3)
     s1 = Simplex(Point(-.1,.5,0), Point(0,0,0), Point(0,1,0))
-    center, _ = DEC.circumsphere(m, s1)
+    center, _ = circumsphere(m, s1)
     θ = π/6
     for r in [.1, 1, 5, 10]
         p = Point(r * cos(θ), 0, r * sin(θ))

@@ -43,7 +43,7 @@ export SimpleSimplex
     SimpleSimplex(s::Simplex)
     SimpleSimplex(s::Vector{SimpleBarycentric{N}}) where N
 
-Like a `simplex` but without statically storing the dimension.
+Like a `simplex` but not parametrized by dimension.
 """
 struct SimpleSimplex{N}
     points::Vector{Point{N}}
@@ -54,10 +54,8 @@ export Metric
     Metric{N, T<:SMatrix{N, N, Float64}}(mat::Symmetric{Float64, T})
     Metric(mat::T) where {N, T<:SMatrix{N, N, Float64}}
     Metric(mat::AbstractMatrix{<:Real})
-    Metric(N::Int)
 
-A symmetric but not necessarily positive semi-definite metric. The last method creates the
-Euclidean metric.
+A symmetric but not necessarily positive semi-definite metric.
 """
 struct Metric{N, T<:SMatrix{N, N, Float64}}
     mat::Symmetric{Float64, T}
@@ -67,10 +65,8 @@ export Wedge
 """
     Wedge{N, K}(vectors::SVector{K, SVector{N, Float64}})
     Wedge(vectors::Vector{SVector{N, Float64}}) where N
-    Wedge(s::Simplex{N, K}) where {N, K}
 
-The wedge product of `K` vectors in `N` dimensional space. The last method creates the
-wedge product of all vectors emanating from the first vertex of a simplex.
+The wedge product of `K` vectors in `N` dimensional space.
 """
 struct Wedge{N, K}
     vectors::SVector{K, SVector{N, Float64}}
@@ -81,14 +77,11 @@ export Barycentric
     Barycentric{N, K}(s::Simplex{N, K}, coords::SVector{K, Float64}) where {N, K}
     Barycentric(s::Simplex{N, K}, coords::AbstractVector{<:Real}) where {N, K}
     Barycentric(s::Simplex, coords::Vararg{<:Real})
-    Barycentric(m::Metric{N}, s::Simplex{N}, p::Point{N}) where N
     Barycentric(b::SimpleBarycentric)
 
 A representation of a point with respect to a simplex using barycentric coordinates. If the
 simplex `s` has vertices `Aᵢ` and `x=coords` then the point represented by
-`b = Barycentric(s, coords)` is `Point(b) = ΣAᵢxᵢ`. The last method produces the Barycentric
-for the projection of a point onto the affine subspace spanned by a simplex according to a
-given metric.
+`b = Barycentric(s, coords)` is `Point(b) = ΣAᵢxᵢ`.
 """
 struct Barycentric{N, K}
     simplex::Simplex{N, K}
@@ -108,7 +101,7 @@ export SimpleBarycentric
     SimpleBarycentric(s::SimpleSimplex{N}, coords::AbstractVector{<:Real}) where N
     SimpleBarycentric(b::Barycentric)
 
-Like a `Barycentric` but without statically storing the dimension of the simplex.
+Like a `Barycentric` but not parametrized by dimension.
 """
 struct SimpleBarycentric{N}
     simplex::SimpleSimplex{N}
@@ -156,10 +149,8 @@ export CellComplex
     CellComplex{N,K}() where {N, K}
     CellComplex{N,K}(cells::AbstractVector{Cell{N}}) where {N, K}
     CellComplex(simplices::AbstractVector{Simplex{N, K}})
-    CellComplex(cells::AbstractVector{Cell{N}}) where N
 
 A cell complex with cells of dimension `0` through `K-1` embedded in `N` dimensional space.
-The last method creates a cell complex consisting of all descendants of `cells`.
 """
 struct CellComplex{N, K}
     cells::SVector{K, UniqueVector{Cell{N}}}
