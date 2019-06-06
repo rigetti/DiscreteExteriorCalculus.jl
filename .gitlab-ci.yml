@@ -1,7 +1,5 @@
 image: julia:1.1
 test:
-  only:
-    - merge_requests
   before_script:
     - julia --project=@. -e "import Pkg; Pkg.instantiate()"
   script:
