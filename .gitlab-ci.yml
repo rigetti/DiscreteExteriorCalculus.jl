@@ -4,5 +4,3 @@ test:
     - julia --project=@. -e "import Pkg; Pkg.instantiate()"
   script:
     - julia --project=@. -e "import Pkg; Pkg.test(; coverage = true)"
-    - julia --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
-    - julia --project=test/coverage test/coverage/coverage-summary.jl
