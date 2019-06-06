@@ -1,3 +1,5 @@
 using Documenter, DiscreteExteriorCalculus
 
-makedocs(sitename="DiscreteExteriorCalculus")
+makedocs(modules = [DiscreteExteriorCalculus],
+    sitename="DiscreteExteriorCalculus.jl",
+    pages = ["Docstrings" => "docstrings.md"])
