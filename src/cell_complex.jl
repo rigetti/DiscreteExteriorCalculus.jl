@@ -53,7 +53,7 @@ import Base: push!
 """
     push!(comp::CellComplex{N,K}, c::Cell{N}) where {N, K}
 
-Add a Cell to a CellComplex unless it is already in the CellComplex.
+Add a Cell to a CellComplex unless it is already in the CellComplex. Return comp.
 """
 function push!(comp::CellComplex{N,K}, c::Cell{N}) where {N, K}
     @assert c.K <= K
@@ -68,7 +68,8 @@ import Base: append!
     append!(comp::CellComplex{N}, cells::AbstractVector{Cell{N}}) where N
     append!(comp1::CellComplex{N, K}, comp2::CellComplex{N, J}) where {N, K, J}
 
-`push!` all cells in an array or a cell complex into another cell complex.
+`push!` all cells in an array or a cell complex into another cell complex. Return the first
+cell complex.
 """
 function append!(comp::CellComplex{N}, cells::AbstractVector{Cell{N}}) where N
     for c in cells
@@ -119,8 +120,7 @@ export pairwise_delaunay
     pairwise_delaunay(m::Metric{N}, comp::CellComplex{N, K}, ϵ::Real=0.0) where {N, K}
 
 Return `true` if every pair of cells sharing a face are within `ϵ` of pairwise delaunay,
-else `false`. This is a necessary condition to make sure all volumes of the dual complex
-are positive.
+else `false`.
 """
 function pairwise_delaunay(m::Metric{N}, comp::CellComplex{N, K},
                            ϵ::Real=0.0) where {N, K}
@@ -143,7 +143,6 @@ export one_sided
     one_sided(m::Metric{N}, comp::CellComplex{N, K}, ϵ::Real=0.0) where {N, K}
 
 Return `true` if every boundary cell has its circumcenter inside the cell complex up to `ϵ`.
-This is a necessary condition to make sure all volumes of the dual complex are positive.
 """
 function one_sided(m::Metric{N}, comp::CellComplex{N, K},
     ϵ::Real=0.0) where {N, K}
@@ -168,8 +167,7 @@ export pairwise_noncocyclic
     pairwise_noncocyclic(m::Metric{N}, comp::CellComplex{N, K}, ϵ::Real=0.0) where {N, K}
 
 Return `true` if every pair of cells sharing a face are more than `ϵ` away from sharing
-a circumsphere, else `false`. This is the property required to make sure all volumes of the
-dual complex are nonzero.
+a circumsphere, else `false`.
 """
 function pairwise_noncocyclic(m::Metric{N}, comp::CellComplex{N, K},
     ϵ::Real=0.0) where {N, K}
@@ -206,5 +204,3 @@ function well_centered(m::Metric{N}, comp::CellComplex{N, K},
     end
     return true
 end
-
-# TODO improve these docstrings
