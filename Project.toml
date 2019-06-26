@@ -1,0 +1,21 @@
+name = "DiscreteExteriorCalculus"
+uuid = "0a3a9624-8642-11e9-0f42-fd2a0d40ec72"
+authors = ["Michael Scheer <mgscheer@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MatrixNetworks = "4f449596-a032-5618-b826-5a251cb6dc11"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+UniqueVectors = "2fbcfb34-fd0c-5fbb-b5d7-e826d8f5b0a9"
+
+[extras]
+AdmittanceModels = "88a7bace-b6cd-11e8-0e38-19740a683dcd"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["AdmittanceModels", "Test"]

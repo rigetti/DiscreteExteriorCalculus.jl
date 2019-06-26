@@ -1,0 +1,1 @@
+DiscreteExteriorCalculus.jl was developed in 2019 by Michael G. Scheer under the supervision of Hakan E. Türeci and Marcus P. da Silva. Thanks to Eric Peterson and Charles Hadfield for helpful conversations about differential geometry and discrete exterior calculus. Thanks to Andrew Keller and Alex Mellnik for helpful advice on Julia best practices.
