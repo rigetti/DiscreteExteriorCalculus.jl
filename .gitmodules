@@ -1,0 +1,3 @@
+[submodule "AdmittanceModels.jl"]
+	path = AdmittanceModels.jl
+	url = https://github.com/rigetti/AdmittanceModels.jl.git

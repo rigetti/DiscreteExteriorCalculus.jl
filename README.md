@@ -1,11 +1,16 @@
 # DiscreteExteriorCalculus.jl
 
+[travis-img]: https://travis-ci.com/rigetti/DiscreteExteriorCalculus.jl.svg?branch=master
+[travis-url]: https://travis-ci.com/rigetti/DiscreteExteriorCalculus.jl
+
+[![][travis-img]][travis-url]
+
 DiscreteExteriorCalculus.jl is a package implementing [Discrete Exterior Calculus](https://en.wikipedia.org/wiki/Discrete_exterior_calculus). Data structures for cell complexes, primal, and dual meshes are provided along with implementations of the [exterior derivative](https://en.wikipedia.org/wiki/Exterior_derivative),
 [hodge star](https://en.wikipedia.org/wiki/Hodge_star_operator), [codifferential](https://en.wikipedia.org/wiki/Hodge_star_operator#On_manifolds), and [Laplace-de Rham](https://en.wikipedia.org/wiki/Laplace%E2%80%93Beltrami_operator#Laplace%E2%80%93de_Rham_operator) operators.
 
 ## Installation
 
-Clone the repository from GitHub. No build is required beyond the default Julia compilation.
+Clone the repository from GitHub and install Julia 1.1. No build is required beyond the default Julia compilation.
 
 ## Example usage: modes of the Laplace-de Rham operator on a rectangle with Dirichlet boundary conditions
 

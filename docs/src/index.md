@@ -1,5 +1,0 @@
-# Docstrings
-
-```@autodocs
-Modules = [DiscreteExteriorCalculus]
-```
