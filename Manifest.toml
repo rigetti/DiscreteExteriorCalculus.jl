@@ -2,10 +2,10 @@
 
 [[AdmittanceModels]]
 deps = ["Combinatorics", "IterativeSolvers", "LinearAlgebra", "MatrixNetworks", "SparseArrays", "Test", "UniqueVectors"]
-git-tree-sha1 = "b31c7f8a34210e35e7b3d48777857010cc6baa88"
+git-tree-sha1 = "30fd19c95db0b6f60150ef197c7095bf39a06f77"
 repo-rev = "master"
 repo-url = "https://github.com/rigetti/AdmittanceModels.jl.git"
-uuid = "88a7bace-b6cd-11e8-0e38-19740a683dcd"
+uuid = "5eda1363-42a2-4d75-bc45-7e2a4a7b92b2"
 version = "0.1.0"
 
 [[Arpack]]
