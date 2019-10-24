@@ -14,6 +14,13 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 UniqueVectors = "2fbcfb34-fd0c-5fbb-b5d7-e826d8f5b0a9"
 
+[compat]
+AdmittanceModels = "0.1"
+Combinatorics = "0.7"
+MatrixNetworks = "1"
+UniqueVectors = "0.8"
+julia = "1"
+
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
