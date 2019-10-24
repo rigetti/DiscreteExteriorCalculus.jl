@@ -2,8 +2,11 @@
 
 [travis-img]: https://travis-ci.com/rigetti/DiscreteExteriorCalculus.jl.svg?branch=master
 [travis-url]: https://travis-ci.com/rigetti/DiscreteExteriorCalculus.jl
+[codecov-img]: https://codecov.io/gh/rigetti/DiscreteExteriorCalculus.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/rigetti/DiscreteExteriorCalculus.jl
 
 [![][travis-img]][travis-url]
+[![][codecov-img]][codecov-url]
 
 DiscreteExteriorCalculus.jl is a package implementing [Discrete Exterior Calculus](https://en.wikipedia.org/wiki/Discrete_exterior_calculus). Data structures for cell complexes, primal, and dual meshes are provided along with implementations of the [exterior derivative](https://en.wikipedia.org/wiki/Exterior_derivative),
 [hodge star](https://en.wikipedia.org/wiki/Hodge_star_operator), [codifferential](https://en.wikipedia.org/wiki/Hodge_star_operator#On_manifolds), and [Laplace-de Rham](https://en.wikipedia.org/wiki/Laplace%E2%80%93Beltrami_operator#Laplace%E2%80%93de_Rham_operator) operators.
